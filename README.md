@@ -1,5 +1,5 @@
 # Estudo Autônomo: Formulários Validados e CRUD em Memória no Flutter
-**Disciplina:** Programação / Desenvolvimento Mobile (Flutter & Dart)  
+**Disciplina:** Programação de dispositivos móveis
 **Professor:** Clerivaldo Roccia  
 **Aluno:** Bruno de Santis Sartori  
 **Instituição:** Escola de Engenharia de Piracicaba (EEP)  
