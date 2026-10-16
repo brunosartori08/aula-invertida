@@ -1,0 +1,259 @@
+================================================================================
+RELATÓRIO TÉCNICO DE ESTUDO AUTÓNOMO: FLUTTER & DART
+Formulários Validados e CRUD em Memória no Flutter
+================================================================================
+
+Aluno: Bruno de Santis Sartori
+Curso: Engenharia - Escola de Engenharia de Piracicaba (EEP)
+Disciplina: Desenvolvimento Mobile / Flutter
+Professor: Clerivaldo Roccia
+Data: Outubro de 2026
+
+--------------------------------------------------------------------------------
+1. RESPOSTAS AOS QUATRO CHECKPOINTS TEÓRICOS
+--------------------------------------------------------------------------------
+
+CHECKPOINT 1 (Secção 2.3 & 10)
+--------------------------------------------------------------------------------
+a) Porque é que um nome composto exclusivamente por espaços tem de ser rejeitado?
+Resposta: Espaços em branco não identificam uma pessoa nem uma entidade. Se a
+entrada contiver apenas espaços, a cadeia de caracteres não está vazia na propriedade
+'.isEmpty', mas é nula em conteúdo útil. O método '.trim()' remove os espaços nas
+extremidades, permitindo que a verificação identifique a ausência de texto real.
+
+b) O que retorna o 'validator' quando o campo está válido?
+Resposta: Retorna 'null'. No Flutter, retornar uma String comunica uma mensagem de
+erro que será desenhada na interface; retornar 'null' sinaliza que todas as regras
+de validação daquele campo foram cumpridas.
+
+c) Qual é a diferença entre o TextEditingController e a chave GlobalKey<FormState>?
+Resposta: O TextEditingController gere individualmente o texto de um campo de
+entrada (leitura, escrita e escuta de eventos). A GlobalKey<FormState> dá acesso ao
+estado do widget Form como um todo, permitindo executar operações coordenadas em
+lote sobre todos os campos agrupados, tais como validate(), reset() e save().
+
+
+CHECKPOINT 2 (Secção 4 & 10)
+--------------------------------------------------------------------------------
+Previsão do retorno da função 'validarPreco' para as seguintes entradas:
+- Vazio (ou apenas espaços): Retorna 'Informe o preço.'
+- 'abc': Retorna 'Digite um número válido.' (converterPreco devolve null).
+- '0' e '-5': Retorna 'O preço deve ser maior que zero.' (falha na regra preco <= 0).
+- '12,50': Retorna 'null' (conversão válida para o valor finito 12.50).
+- 'NaN': Retorna 'Digite um número válido.' (rejeitado por !preco.isFinite).
+
+Por que um teclado numérico não garante que o dado recebido seja válido?
+Resposta: O teclado virtual (TextInputType.number) é apenas um recurso de usabilidade
+para orientar o utilizador. Ele não substitui a validação lógica, pois o utilizador
+pode colar texto da área de transferência, digitar múltiplos pontos, deixar o campo
+vazio ou inserir números negativos. A verificação programática continua a ser obrigatória.
+
+
+CHECKPOINT 3 (Secção 5 & 10)
+--------------------------------------------------------------------------------
+O que acontece ao salvar e ao cancelar uma edição?
+Resposta: Ao salvar, o formulário cria uma nova instância de Produto com os dados
+atualizados e devolve-a através de 'Navigator.pop(context, produto)'. A tela de
+detalhes repassa esse resultado à tela principal, que substitui o registo na
+posição correspondente da lista. Ao cancelar, o formulário fecha sem argumentos
+('Navigator.pop(context)'), retornando 'null'. A tela principal deteta o retorno
+nulo e não efetua nenhuma alteração, preservando o produto original intacto.
+
+Por que se usa 'produtos[indice] = atualizado' em vez de 'produtos.add(atualizado)'?
+Resposta: O método '.add()' acrescentaria um novo elemento no final da lista, gerando
+um registo duplicado e mantendo o item antigo desatualizado. A atribuição direta
+pelo índice substitui exatamente o registo existente na posição original da memória.
+
+Por que o formulário não altera diretamente o objeto original durante a digitação?
+Resposta: Os atributos da classe Produto são imutáveis ('final'). Além disso, se o
+objeto original fosse modificado durante a digitação e o utilizador clicasse em
+'Cancelar', o registo original ficaria corrompido na memória. Trabalhar com
+controllers isolados e instanciar um novo objeto apenas ao salvar garante que o
+cancelamento preserva o estado original.
+
+
+CHECKPOINT 4 (Secção 6.6 & 10)
+--------------------------------------------------------------------------------
+Qual é a diferença entre 'false' e 'null' no retorno do diálogo de exclusão?
+Por que ambos impedem a remoção?
+Resposta: 'false' representa uma decisão explícita ao premir o botão 'Cancelar' do
+diálogo. 'null' ocorre quando o diálogo é fechado sem uma escolha (ao tocar fora da
+caixa modal ou ao premir o botão voltar do dispositivo). Ambos impedem a remoção
+porque a verificação condicional exige confirmação afirmativa inequívoca:
+'if (!mounted || confirmou != true) return;'.
+
+Em que tela muda a lista de produtos?
+Resposta: Exclusivamente na tela principal (_TelaProdutosState), onde reside a
+variável de estado 'final List<Produto> produtos = [];'.
+
+Por que o SnackBar do cadastro aparece após o retorno à tela principal?
+Resposta: Porque a inserção na coleção e a reconstrução visual da lista só ocorrem
+depois de o formulário fechar e devolver o objeto à tela principal. Apresentar o
+feedback na tela principal assegura que o utilizador visualiza a confirmação no
+mesmo contexto onde a lista atualizada é exibida.
+
+
+--------------------------------------------------------------------------------
+2. EXPLICAÇÃO CONCEITUAL DO FLUXO DO SISTEMA
+--------------------------------------------------------------------------------
+1. Validação Coordenada:
+   O Form agrupa os campos de entrada e recebe uma chave 'GlobalKey<FormState>'.
+   Ao carregar em Salvar, 'chave.currentState!.validate()' dispara os métodos
+   'validator' de todos os TextFormField filhos. Se algum retornar uma String de
+   erro, o formulário exibe a mensagem a vermelho e interrompe o processo.
+
+2. Devolução de Dados:
+   Quando todos os campos estão válidos, os valores dos controllers são convertidos
+   para os tipos numéricos e um novo objeto Produto é instanciado. O formulário
+   fecha-se através de 'Navigator.pop(context, produto)', entregando o novo registo
+   à pilha de navegação.
+
+3. Atualização Reativa:
+   A tela principal aguarda o retorno via 'await Navigator.push<Produto>(...)'.
+   Ao receber o objeto e confirmar 'mounted', a tela insere ou substitui o item na
+   lista dentro de um 'setState()', notificando o Flutter para reconstruir a
+   árvore de widgets e recalcular todos os contadores e totais em tempo real.
+
+
+--------------------------------------------------------------------------------
+3. TABELA DE TESTES DO SISTEMA BASE (T1 a T14)
+--------------------------------------------------------------------------------
+Caso | Procedimento                          | Resultado Esperado                     | Resultado Observado                    | Situação
+-----+---------------------------------------+----------------------------------------+----------------------------------------+---------
+T1   | Abrir a aplicação pela primeira vez   | Lista vazia e quantidade zero          | Exibe 'Nenhum produto cadastrado.' e 0 | Passou
+T2   | Salvar nome e preço vazios            | Erros nos campos; tela aberta          | Mensagens exibidas; tela não fecha     | Passou
+T3   | Nome com espaços e preço 10           | Nome rejeitado                         | Validador recusa nome vazio (trim)     | Passou
+T4   | Nome Mouse e preço 'abc'              | Número inválido; sem cadastro          | Mensagem 'Digite um número válido.'    | Passou
+T5   | Nome Mouse e preço 0 ou -2            | Preço deve ser maior que zero          | Mensagem 'Preço deve ser maior que 0.' | Passou
+T6   | Nome Mouse e preço '12,50'            | Produto inserido; contagem = 1         | Item cadastrado como R$ 12.50; total 1 | Passou
+T7   | Cadastrar sem descrição               | Detalhes mostra 'Sem descrição.'       | Detalhes exibe padrão 'Sem descrição.' | Passou
+T8   | Editar Mouse para Mouse USB e salvar  | Registo atualizado; contagem = 1       | Nome alterado no card; contagem = 1    | Passou
+T9   | Editar nome e cancelar                | Nome original preservado               | Retorna sem alterações; nome mantido   | Passou
+T10  | Abrir cadastro e cancelar             | Nenhum registo acrescentado            | Retorna sem modificar a lista          | Passou
+T11  | Pedir exclusão e cancelar             | Item e contagem preservados            | Diálogo fecha com false; item mantido  | Passou
+T12  | Confirmar exclusão do último produto  | Lista vazia; contagem 0; aviso         | Item removido; SnackBar exibido        | Passou
+T13  | Cadastrar 3 produtos e editar o 2º    | Apenas o 2º registo é alterado         | 1º e 3º registos intactos              | Passou
+T14  | Usar NaN ou Infinity como preço       | Número inválido; sem cadastro          | Rejeitado pela verificação .isFinite   | Passou
+
+
+--------------------------------------------------------------------------------
+4. RELATÓRIO DE TESTES DOS EXERCÍCIOS PROGRESSIVOS (1 a 10)
+--------------------------------------------------------------------------------
+
+Exercício 1: Nome Válido e Mensagem Personalizada
+- Teste 1.1: Campo vazio -> Exibe 'Informe o nome.'
+- Teste 1.2: Nome com 2 caracteres ('Al') -> Exibe 'O nome deve ter pelo menos três caracteres.'
+- Teste 1.3: Nome válido ('Ana') -> Saudação 'Olá, Ana!' exibida com sucesso.
+* Resposta: É necessário usar '.trim()' antes de testar o comprimento porque espaços
+  em branco seriam contados como caracteres normais caso não fossem removidos.
+
+Exercício 2: Limpar e Evitar Saudação Antiga
+- Teste 2.1: Confirmar 'Ana' (saudação ativa), apagar o campo e confirmar -> Saudação anterior é apagada imediatamente.
+- Teste 2.2: Provocar erro e premir 'Limpar' -> Campo limpo, erros visuais removidos via reset() e mensagem apagada.
+- Teste 2.3: Digitar texto inválido e premir 'Limpar' -> Nenhuma mensagem de sucesso é gerada.
+
+Exercício 3: Regras Adicionais para o Produto
+- Teste 3.1: Nome de produto com 2 letras ('TV') -> Rejeitado pelo validador.
+- Teste 3.2: Descrição com exatamente 120 caracteres -> Aceite com sucesso.
+- Teste 3.3: Descrição com 121 caracteres -> Rejeitada com 'A descrição deve ter no máximo 120 caracteres.'
+* Resposta: Centralizar as regras numa única tela garante manutenção uniforme
+  tanto na inserção quanto na edição (princípio DRY).
+
+Exercício 4: Cancelamento sem Efeitos Colaterais
+- Teste 4.1: Cancelar cadastro -> Retorno nulo; nenhum item é criado.
+- Teste 4.2: Editar Mouse (R$ 50) para Teclado (R$ 100) e cancelar -> Mouse a R$ 50 mantido intacto.
+- Teste 4.3: Abrir exclusão e cancelar -> Item permanece inalterado na lista.
+
+Exercício 5: Acrescentar Quantidade em Estoque
+- Teste 5.1: Quantidade com texto ('abc') ou decimal ('2.5') -> Rejeitado por int.tryParse.
+- Teste 5.2: Quantidade zero ('0') -> Aceite com sucesso (estoque zerado permitido).
+- Teste 5.3: Cadastrar quantidade 3 e editar para 5 -> Atualização refletida na listagem e nos detalhes.
+
+Exercício 6: Calcular o Valor Total do Estoque
+- Teste 6.1: Item A (R$ 10, qtd 3) e Item B (R$ 20, qtd 2) -> Total Geral: R$ 70.00.
+- Teste 6.2: Excluir Item A -> Total Geral atualiza dinamicamente para R$ 40.00.
+- Teste 6.3: Lista sem produtos -> Total Geral exibe estavelmente R$ 0.00.
+* Resposta: Fixar o valor total apenas no momento do cadastro geraria valores
+  defasados após edições de quantidade ou preço. O cálculo deve ser dinâmico.
+
+Exercício 7: Impedir Nomes Repetidos
+- Teste 7.1: Cadastrar 'Mouse' e tentar cadastrar 'mouse' -> Bloqueado com 'Já existe um produto com este nome.'
+- Teste 7.2: Editar 'Mouse' mantendo o mesmo nome -> Permitido salvar com sucesso.
+- Teste 7.3: Cadastrar 'Teclado', editar 'Teclado' mudando o nome para 'Mouse' -> Rejeitado por duplicidade.
+
+Exercício 8: Buscar e Editar o Produto Correto
+- Teste 8.1: Cadastrar Mouse, Teclado e Monitor; buscar 'tec' -> Exibe apenas Teclado.
+- Teste 8.2: Indicador com filtro ativo -> Exibe 'Cadastrados: 3 | Encontrados: 1'.
+- Teste 8.3: Editar Teclado exibido na posição 0 da busca -> Ao limpar a busca, apenas o Teclado foi modificado; Mouse permanece intacto.
+
+Exercício 9: Identidade Estável (ID Único Permanente)
+- Teste 9.1: Gerar IDs 1, 2 e 3; excluir o ID 2 -> Próximo cadastro recebe ID 4 (contador nunca retrocede).
+- Teste 9.2: Editar o produto ID 3 -> O número do ID 3 permanece o mesmo após a edição.
+- Teste 9.3: Localização por 'indexWhere((p) => p.id == atualizado.id)' previne erros de índice na lista filtrada.
+
+Exercício 10: Integrar e Apresentar o Gerenciador de Produtos
+- Teste 10.1: Total geral mantém R$ 70.00 mesmo com filtro ativo exibindo apenas um item.
+- Teste 10.2: Busca por termo inexistente ('xyz') -> Exibe 'Nenhum produto encontrado.' sem travar.
+- Teste 10.3: Fluxo integrado: validações, busca, IDs estáveis, recálculo de estoque e confirmação modal.
+
+
+--------------------------------------------------------------------------------
+5. REGISTO DE DÚVIDAS, BLOQUEIOS E CORREÇÕES TÉCNICAS
+--------------------------------------------------------------------------------
+Bloqueio 1: Edição na lista filtrada modificava o produto errado.
+- Resultado esperado: Ao filtrar por 'Monitor' e editar o item da tela, o Monitor
+  deveria ser atualizado.
+- Resultado observado: O sistema utilizava o índice visual da lista filtrada (índice 0)
+  e substituía o primeiro produto da lista original ('Mouse').
+- Correção implementada: Criação do campo 'id' imutável no Produto e busca por
+  predicado funcional na lista mestre:
+  final indiceOriginal = produtos.indexWhere((p) => p.id == atualizado.id);
+  if (indiceOriginal != -1) { produtos[indiceOriginal] = atualizado; }
+
+Bloqueio 2: Validação de nome duplicado impedia a edição do próprio produto.
+- Resultado esperado: Permitir editar o preço de 'Mouse' mantendo o mesmo nome.
+- Resultado observado: O validador localizava 'Mouse' na lista de nomes cadastrados
+  e acusava falsamente duplicação.
+- Correção implementada: Na validação do formulário, remover o nome atual do próprio
+  produto da lista de verificação antes de testar:
+  final outrosNomes = widget.nomesExistentes
+      .where((n) => nomeAtual == null || n.trim().toLowerCase() != nomeAtual)
+      .map((n) => n.trim().toLowerCase())
+      .toList();
+
+
+--------------------------------------------------------------------------------
+6. QUESTÃO CONCEITUAL SOBRE PERSISTÊNCIA DE DADOS (EXERCÍCIO 10)
+--------------------------------------------------------------------------------
+O que precisaria mudar na arquitetura para manter os produtos após fechar a aplicação?
+Resposta: Atualmente, os registos residem na memória RAM volátil associada ao State da
+tela principal. Ao encerrar o aplicativo, a memória é desalocada. Para garantir
+persistência real seriam necessárias três alterações:
+1. Serialização de Dados: Implementar métodos toJson() e fromJson() na classe Produto.
+2. Camada de Armazenamento: Utilizar um mecanismo de armazenamento em disco, como
+   banco de dados SQLite local (pacote sqflite), NoSQL (Hive/Isar) ou arquivos de
+   chave-valor (shared_preferences).
+3. Ciclo de Inicialização e Escrita Assíncrona: Carregar os dados salvos durante o
+   initState() da tela principal e persistir as alterações em disco a cada cadastro,
+   edição ou exclusão antes de atualizar o estado visual com setState().
+
+
+--------------------------------------------------------------------------------
+7. DECLARAÇÃO DE APOIO EXTERNO E USO DE INTELIGÊNCIA ARTIFICIAL
+--------------------------------------------------------------------------------
+Em conformidade com as diretrizes da Seção 11 do material didático, declara-se
+a utilização de ferramenta de apoio com a devida transparência acadêmica:
+
+- Ferramenta utilizada: Gemini (Google AI).
+- Escopo e finalidade do uso:
+  1. Organização, tabulação e formatação estruturada dos casos de teste (T1 a T14
+     e testes progressivos dos Exercícios 1 a 10).
+  2. Apoio na redação formal e diagramação do relatório técnico (arquivo TXT/PDF)
+     contendo as respostas aos quatro checkpoints teóricos e o registro de dúvidas.
+  3. Revisão conceitual da questão de persistência de dados.
+
+- Autonomia e autoria: O código-fonte foi integralmente executado, validado e
+  compreendido pelo aluno no ambiente de desenvolvimento local (VS Code / Flutter Web),
+  sendo plenamente responsável pela explicação técnica e comprovação
+  dos resultados observados.
+--------------------------------------------------------------------------------
